@@ -15,7 +15,8 @@ class market_Info(object):
 	def __init__(self):
 		print("__init__ is called\n")
 	
-	def __called_ticker_value__(self):
+	
+	def __called_ticker_value(self):
 		url = "https://api.upbit.com/v1/market/all"
 		
 		querystring = {"isDetails": "false"}
@@ -28,10 +29,10 @@ class market_Info(object):
 			if ele['market'][:3] == 'KRW':
 				self.tickers_dict.update({ele['market']: Pykson().from_json(ele, Ticker)})
 	
-	def __set_tickers_info__(self):
+	def __set_tickers_info(self):
 		if len(self.tickers_dict) == 0:
 			print('ticker info is not called')
-			self.__called_ticker_value__()
+			self.__called_ticker_value()
 		
 		print('Downloading Tickers Info', end='')
 		
@@ -56,7 +57,7 @@ class market_Info(object):
 		print()
 	
 	def get_sorted_ticker_by_value(self, count=None, minimum=None):
-		self.__set_tickers_info__()
+		self.__set_tickers_info()
 		
 		ticker_list = []
 		for key in self.tickers_dict:
@@ -69,6 +70,8 @@ class market_Info(object):
 		
 		return ticker_list if count is None else ticker_list[:count]
 	
+	##########################################################################
+	# 삭제해야할 코드
 	def print_tickers(self):
 		for key in self.tickers_dict.keys():
 			print(self.tickers_dict[key].market, self.tickers_dict[key].korean_name, self.tickers_dict[key].change_rate)
