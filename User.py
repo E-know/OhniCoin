@@ -40,7 +40,7 @@ class User(SingletonInstance):
 		headers = {"Authorization": authorize_token}
 		
 		res = requests.get(self.__server_url + "/v1/accounts", headers=headers)
-		
+		self.wallet.clear()
 		if res.status_code == 200:
 			res = res.json()
 			for json_data in res:
@@ -66,10 +66,7 @@ class User(SingletonInstance):
 		coin = market[4:]
 		
 		if coin in self.wallet:
-			if self.wallet[coin]['balance'] == volume:
-				self.wallet.pop(coin)
-			else:
-				print(sys.argv[0], market, 'There is a different between [Wallet balance] and [volume]')
+			self.wallet.pop(coin)
 		else:
 			print(sys.argv[0], 'There is no coin in wallet')
 	
@@ -79,3 +76,9 @@ class User(SingletonInstance):
 	def plus_total(self, earn):
 		self.total += earn
 		print('Total %f', self.total)
+		
+	def get_coin_info_from_wallet(self, coin):
+		return self.wallet[coin]
+	
+	def get_wallet(self):
+		return self.wallet
