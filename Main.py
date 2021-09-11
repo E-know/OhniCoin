@@ -8,7 +8,7 @@ from User import User
 from Analyst import analyze_market
 from Ticker import get_ticker
 
-number = 50
+number = 30
 
 def user_update(user):
 	while True:
@@ -49,3 +49,7 @@ if __name__ == '__main__':
 	
 	for p in processes:
 		p.join()
+
+# TODO 1. 매수/매도시 주문이 밀려서 1분내에 거래가 안되는 상황 -> 가격이 변하면 탈출하는 조건?
+# TODO 2. 이득을 보는 금액 제한
+# TODO 3. 프로그램 시작 전에 모든 주문 취소하기

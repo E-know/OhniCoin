@@ -75,10 +75,11 @@ class User(SingletonInstance):
 	
 	def plus_total(self, earn):
 		self.total += earn
-		print('Total %f', self.total)
+		print('Total %f' % self.total)
 		
 	def get_coin_info_from_wallet(self, coin):
 		return self.wallet[coin]
 	
 	def get_wallet(self):
 		return self.wallet
+	

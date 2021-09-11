@@ -8,11 +8,14 @@ from urllib.parse import urlencode
 
 ave1_std = 10
 ave2_std = 60
-order_waiting_time = 60
+order_waiting_time = 60 * 2
+want_to_buy_price = 5500
+limit_minus = -0.02
+limit_plus = 50
 
 
 def get_volume(price):
-	volume = 5500 / price
+	volume = want_to_buy_price / price
 	return volume
 
 
@@ -48,7 +51,7 @@ def get_market_candle(market):
 	if response.status_code == 200:
 		return response.json()
 	else:
-		print(sys.argv[0], 'in get_market_candle', market, response.json()['error']['message'])
+		print(sys.argv[0], 'in get_market_candle', json.text)
 		return 'miss'
 
 
@@ -66,6 +69,7 @@ def get_average_And_price(market):
 	ave2 /= ave2_std
 	
 	return ave1, ave2, candles[0]['trade_price']
+
 
 def cancel_order(order_id):
 	access_key = os.environ['UPBIT_OPEN_API_ACCESS_KEY']
@@ -93,7 +97,7 @@ def cancel_order(order_id):
 	headers = {"Authorization": authorize_token}
 	
 	res = requests.delete(server_url + "/v1/order", params=query, headers=headers)
-	
+
 
 def wait_order(order_id):
 	access_key = os.environ['UPBIT_OPEN_API_ACCESS_KEY']
@@ -173,7 +177,7 @@ def order_coin(market, side, volume, price, ord_type):
 		order_id = res.json()['uuid']
 		return wait_order(order_id)
 	else:
-		print('ERROR', res.json()['error']['message'])  # 주문 금액이 부족합니다.
+		print('ERROR', market, res.json()['error']['message'])  # 주문 금액이 부족합니다. # 주문가격 단위를 잘못 입력하셨습니다. 확인 후 시도해주세요.
 		return 'miss'
 
 
@@ -181,22 +185,21 @@ def analyze_market(market, user):
 	coin = market[4:]
 	time_sec = 60
 	was_under = False
-	if user.have_coin(coin):
-		coin_data = user.get_coin_info_from_wallet(coin)
-		buy_price = float(coin_data['avg_buy_price'])
-		volume = float(coin_data['balance'])
-		time_sec = 10
 	while True:
 		ave1, ave2, price = get_average_And_price(market)
 		if price == 'miss':
 			return 0
 		if user.have_coin(coin):
-			if price * 0.9995 - buy_price * 1.0005 > 0 or (price - buy_price) / buy_price < -0.03:
+			coin_data = user.get_coin_info_from_wallet(coin)
+			buy_price = float(coin_data['avg_buy_price'])
+			volume = float(coin_data['balance'])
+			time_sec = 10
+			if (price * 0.9995 - buy_price * 1.0005) * volume > limit_plus or (price - buy_price) / buy_price < limit_minus:
 				# SELL
 				state = order_coin(market, 'ask', volume, price, 'limit')
 				if state == 'done':
 					earn = (price * 0.9995 - buy_price * 1.0005) * volume
-					print('Sell %s %f Earn %f' % (market, volume, earn), end=' ')
+					print('Sell %s Earn %f' % (market, earn))
 					user.plus_total(earn)
 					was_under = False
 					time_sec = 60
@@ -221,7 +224,7 @@ def analyze_market(market, user):
 					print(market, sys.argv[0], 'buy function is wrong')
 			
 			was_under = ave1 < ave2
-		if user.have_coin(coin):
-			print('HAVE %s' % market)
-		print('%s Price %f %d이평선 : %f %d이평선 %f ave1 > ave2 : %s / was_under : %s [Final %s]' % (market, price, ave1_std, ave1, ave2_std, ave2, (ave1 > ave2), was_under, was_under and (ave1 > ave2)))
+		# if user.have_coin(coin):
+		#	print('HAVE %s' % market)
+		# print('%s Price %f %d이평선 : %f %d이평선 %f ave1 > ave2 : %s / was_under : %s [Final %s]' % (market, price, ave1_std, ave1, ave2_std, ave2, (ave1 > ave2), was_under, was_under and (ave1 > ave2)))
 		time.sleep(time_sec)
