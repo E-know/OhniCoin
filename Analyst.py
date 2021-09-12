@@ -6,8 +6,9 @@ import uuid
 import hashlib
 from urllib.parse import urlencode
 
-ave1_std = 10
-ave2_std = 60
+ave1_std = 5
+ave2_std = 20
+ave3_std = 60
 order_waiting_time = 60 * 2
 want_to_buy_price = 5500
 limit_minus = -0.02
@@ -59,16 +60,19 @@ def get_average_And_price(market):
 	candles = get_market_candle(market)
 	if candles == 'miss':
 		return 'miss', 'miss', 'miss'
-	ave1 = ave2 = 0
+	ave1 = ave2 = ave3 = 0
 	for i, candle_data in enumerate(candles):
 		if i < ave1_std:
 			ave1 += candle_data['trade_price']
-		ave2 += candle_data['trade_price']
+		if i < ave2_std:
+			ave2 += candle_data['trade_price']
+		ave3 += candle_data['trade_price']
 	
 	ave1 /= ave1_std
 	ave2 /= ave2_std
+	ave3 /= ave3_std
 	
-	return ave1, ave2, candles[0]['trade_price']
+	return ave1, ave2, ave3, candles[0]['trade_price']
 
 
 def cancel_order(order_id):
@@ -181,13 +185,15 @@ def order_coin(market, side, volume, price, ord_type):
 		return 'miss'
 
 
-def analyze_market(market, user):
+def analyze_market(market, user, process_num):
+	time_sec = process_num / 10
 	coin = market[4:]
 	time_sec = 60
 	was_under = False
 	while True:
-		ave1, ave2, price = get_average_And_price(market)
+		ave1, ave2, ave3, price = get_average_And_price(market)
 		if price == 'miss':
+			print('%s - analyze_market] Missing Price')
 			return 0
 		if user.have_coin(coin):
 			coin_data = user.get_coin_info_from_wallet(coin)
@@ -202,21 +208,20 @@ def analyze_market(market, user):
 					print('Sell %s Earn %f' % (market, earn))
 					user.plus_total(earn)
 					was_under = False
-					time_sec = 60
+					# time_sec = process_num / 10
 					user.get_my_wallet()
 				elif state == 'miss':
 					print('miss selling %s' % market)
 					user.get_wallet()
 		else:
-			if ave1 > ave2 and was_under:
+			if ave2 < ave1 < ave3 and was_under:
 				# buy
 				price = get_one_bid_price(price)
 				volume = get_volume(price)
 				state = order_coin(market, 'bid', volume, price, 'limit')
 				if state == 'done':
 					user.get_my_wallet()
-					buy_price = price
-					time_sec = 10
+					# time_sec = process_num / 10
 					print('Buy %s Price %f Volume %f' % (market, price, volume))
 				elif state == 'miss':
 					print('miss buying %s' % market)

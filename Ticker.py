@@ -31,7 +31,7 @@ def get_ticker(count=None):
 			print('.', end='')
 	
 	print('DONE!')
-	ticker.sort(key=lambda it: -it['change_rate'])
+	ticker.sort(key=lambda it: -it['candle_acc_trade_price'])
 	
 	return ticker if count is None else ticker[:count]
 

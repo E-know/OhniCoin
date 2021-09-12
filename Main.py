@@ -8,12 +8,14 @@ from User import User
 from Analyst import analyze_market
 from Ticker import get_ticker
 
-number = 30
+process_number = 30
+
 
 def user_update(user):
 	while True:
 		user.get_my_wallet()
 		time.sleep(5)
+
 
 if __name__ == '__main__':
 	BaseManager.register('user', User)
@@ -25,27 +27,15 @@ if __name__ == '__main__':
 	
 	processes = []
 	ticker_name = []
-	ticker = get_ticker(count=number)
+	ticker = get_ticker(count=process_number)
 	
-	for i in range(number):
-		p = Process(target=analyze_market, args=(ticker[i]['market'], user,))
+	for i in range(process_number):
+		p = Process(target=analyze_market, args=(ticker[i]['market'], user, process_number))
 		processes.append(p)
 		ticker_name.append(ticker[i]['market'])
 		p.start()
 		time.sleep(1)
 	
-	for coin in user.get_wallet():
-		if coin == 'KRW':
-			continue
-		if coin not in ticker_name:
-			p = Process(target=analyze_market, args=('KRW-' + coin, user,))
-			processes.append(p)
-			p.start()
-			time.sleep(1)
-			
-	p = Process(target=user_update, args=(user,))
-	processes.append(p)
-	p.start()
 	
 	for p in processes:
 		p.join()
