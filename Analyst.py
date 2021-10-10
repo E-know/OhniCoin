@@ -7,12 +7,12 @@ import hashlib
 from urllib.parse import urlencode
 
 ave1_std = 5
-ave2_std = 20
+ave2_std = 30
 ave3_std = 60
 order_waiting_time = 60 * 2
 want_to_buy_price = 5500
 limit_minus = -0.02
-limit_plus = 50
+limit_plus = want_to_buy_price * 0.01
 
 
 def get_volume(price):
@@ -44,7 +44,7 @@ def get_one_bid_price(price):
 def get_market_candle(market):
 	url = "https://api.upbit.com/v1/candles/minutes/1"
 	
-	querystring = {"market": market, "count": ave2_std}
+	querystring = {"market": market, "count": ave3_std}
 	
 	headers = {"Accept": "application/json"}
 	
@@ -52,14 +52,15 @@ def get_market_candle(market):
 	if response.status_code == 200:
 		return response.json()
 	else:
-		print(sys.argv[0], 'in get_market_candle', json.text)
+		print(sys.argv[0], 'in get_market_candle', response.text)
 		return 'miss'
 
 
 def get_average_And_price(market):
 	candles = get_market_candle(market)
 	if candles == 'miss':
-		return 'miss', 'miss', 'miss'
+		print('miss Candle')
+		return 'miss', 'miss', 'miss', 'miss'
 	ave1 = ave2 = ave3 = 0
 	for i, candle_data in enumerate(candles):
 		if i < ave1_std:
@@ -71,6 +72,7 @@ def get_average_And_price(market):
 	ave1 /= ave1_std
 	ave2 /= ave2_std
 	ave3 /= ave3_std
+	
 	
 	return ave1, ave2, ave3, candles[0]['trade_price']
 
@@ -185,16 +187,17 @@ def order_coin(market, side, volume, price, ord_type):
 		return 'miss'
 
 
-def analyze_market(market, user, process_num):
-	time_sec = process_num / 10
+def analyze_market(market, user):
+	time_sec = 30
 	coin = market[4:]
-	time_sec = 60
 	was_under = False
 	while True:
 		ave1, ave2, ave3, price = get_average_And_price(market)
+		# print('%s] %f %f %f %f || %s %s' % (market, price, ave1, ave2, ave3, ave2 < ave1 < ave3, was_under))
 		if price == 'miss':
 			print('%s - analyze_market] Missing Price')
-			return 0
+			time.sleep(10)
+			continue
 		if user.have_coin(coin):
 			coin_data = user.get_coin_info_from_wallet(coin)
 			buy_price = float(coin_data['avg_buy_price'])
@@ -208,7 +211,7 @@ def analyze_market(market, user, process_num):
 					print('Sell %s Earn %f' % (market, earn))
 					user.plus_total(earn)
 					was_under = False
-					# time_sec = process_num / 10
+					time_sec = 30
 					user.get_my_wallet()
 				elif state == 'miss':
 					print('miss selling %s' % market)
@@ -221,15 +224,15 @@ def analyze_market(market, user, process_num):
 				state = order_coin(market, 'bid', volume, price, 'limit')
 				if state == 'done':
 					user.get_my_wallet()
-					# time_sec = process_num / 10
+					time_sec = 10
 					print('Buy %s Price %f Volume %f' % (market, price, volume))
 				elif state == 'miss':
 					print('miss buying %s' % market)
+					was_under = False
+					continue
 				else:
 					print(market, sys.argv[0], 'buy function is wrong')
 			
 			was_under = ave1 < ave2
-		# if user.have_coin(coin):
-		#	print('HAVE %s' % market)
-		# print('%s Price %f %d이평선 : %f %d이평선 %f ave1 > ave2 : %s / was_under : %s [Final %s]' % (market, price, ave1_std, ave1, ave2_std, ave2, (ave1 > ave2), was_under, was_under and (ave1 > ave2)))
+		
 		time.sleep(time_sec)
