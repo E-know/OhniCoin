@@ -29,8 +29,8 @@ if __name__ == '__main__':
 		A = Analyze
 		S = Sell in Wallet 적정가에 코인 판매
 		B = blank Wallet 시장가로 모든 코인 판매
-		''', flush=True)
-		print('', flush=True)
+		''')
+		print('')
 		C = input()
 		
 		for p in processes:

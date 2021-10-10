@@ -49,6 +49,8 @@ class User(SingletonInstance):
 		else:
 			print('ERROR]', sys.argv[0] + 'in User get_my_wallet')
 			print(res.json()['error']['message'])
+			
+		return self.wallet
 	
 	def add_coin_to_wallet(self, market, volume, avg_buy_price):
 		coin_name = market[4:]

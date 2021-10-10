@@ -158,9 +158,11 @@ def order_coin(market, side, volume, price, ord_type):
 		'market': market,
 		'side': side,
 		'volume': volume,
-		'price': price,
 		'ord_type': ord_type,
 	}
+	if price is not None:
+		query['price'] = price
+		
 	query_string = urlencode(query).encode()
 	
 	m = hashlib.sha512()
